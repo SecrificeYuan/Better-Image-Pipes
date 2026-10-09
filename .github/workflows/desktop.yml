@@ -98,7 +98,7 @@ jobs:
         run: node scripts/build-desktop.mjs
 
       - name: Upload installers
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ImagePipes-${{ matrix.artifact }}-${{ github.sha }}
           path: |
