@@ -19,7 +19,7 @@
   "build": {
     "appId": "com.imagepipes.app",
     "productName": "Image Pipes",
-    "copyright": "Copyright \u6f0f Image Pipes contributors",
+    "copyright": "Copyright © Image Pipes contributors",
     "publish": null,
     "directories": {
       "output": "release",

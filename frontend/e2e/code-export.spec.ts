@@ -23,6 +23,7 @@ test('real backend export, Monaco, download, stale state and both languages', as
   expect(await readFile(await (await pythonDownload).path() as string, 'utf8'))
     .toBe((await python.json()).code)
   await page.getByRole('button', { name: 'C++', exact: true }).click()
+  const cppGrammar = page.waitForResponse((r) => /\/cpp-[^/]+\.js(?:\?|$)/.test(r.url()) && r.status() === 200)
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Export C++', exact: true }).click()
   const downloaded = await pending
@@ -37,6 +38,7 @@ test('real backend export, Monaco, download, stale state and both languages', as
   expect(response.ok()).toBeTruthy()
   expect(source).toBe((await response.json()).code)
   await expect(page.locator('.monaco-editor')).toBeVisible()
+  await cppGrammar
   expect((await page.locator('.monaco-editor').boundingBox())!.height).toBeGreaterThan(80)
   await page.getByRole('spinbutton', { name: 'Seed', exact: true }).fill('24')
   await expect(page.getByRole('button', { name: 'Download source' })).toBeDisabled()
@@ -48,6 +50,8 @@ test('real backend export, Monaco, download, stale state and both languages', as
   await page.getByRole('menuitem', { name: 'Language', exact: true }).click()
   await page.getByRole('menuitem', { name: '简体中文', exact: true }).click()
   await expect(page.getByRole('button', { name: '导出 C++', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
   await page.screenshot({ path: info.outputPath('cpp-zh.png') })
 })
 

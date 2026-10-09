@@ -98,6 +98,10 @@ export function CodePanel() {
       </Box>
       {!placeholder && <Box sx={{ flex: 1, minHeight: 0 }}>
         <Editor height="100%" language={language} value={code} theme="vs-dark"
+          onMount={(editor, monaco) => {
+            const model = editor.getModel()
+            if (model) monaco.editor.setModelLanguage(model, language)
+          }}
           options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }} />
       </Box>}
     </Box>

@@ -26,7 +26,7 @@ def emit(kind, p, i, o):
         lines += [
             "cv::Mat samples, labels, centers; image.reshape(1, "
             "image.rows*image.cols).convertTo(samples, CV_32F);",
-            "cv::theRNG().state = iteration_seed;",
+            "cv::theRNG() = cv::RNG(iteration_seed);",
             f"cv::kmeans(samples, {k}, labels, "
             f"cv::TermCriteria(cv::TermCriteria::EPS | "
             f"cv::TermCriteria::MAX_ITER, 40, 1.0), {p['attempts']}, "

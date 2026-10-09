@@ -25,7 +25,7 @@ jobs:
           cmake --build /tmp/opencv-build -j2
           cmake --install /tmp/opencv-build
       - run: uv sync --project backend --group dev && uv pip install --python backend/.venv/bin/python opencv-python-headless==4.13.0.92
-      - run: uv run --project backend python scripts/verify-cpp-export-scope.py
+      - run: backend/.venv/bin/python scripts/verify-cpp-export-scope.py
       - run: .venv/bin/python -m pytest tests/test_codegen_cpp.py tests/test_codegen_cpp_native.py --basetemp=/tmp/cpp-results
         working-directory: backend
         env:

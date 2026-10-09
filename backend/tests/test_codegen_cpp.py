@@ -71,3 +71,71 @@ def test_python_generator_matches_public_baseline():
         edges=[Edge(id="e", source="blank", target="blur")],
     )
     assert generate_python(graph, 12) == namespace["generate_python"](graph, 12)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"seed": True},
+        {"seed": 1.5},
+        {"seed": -1},
+        {"seed": 4294967296},
+        {"iteration_count": 0},
+        {"iteration_count": "2"},
+    ],
+)
+def test_real_api_rejects_invalid_request_fields(values):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/codegen/cpp",
+            json={
+                "graph": Graph(nodes=[blank()]).model_dump(),
+                **values,
+            },
+        )
+    assert response.status_code == 422
+
+
+def test_resource_and_parameter_validation(tmp_path):
+    unsupported = tmp_path / "image.txt"
+    unsupported.write_text("Unsupported input extension")
+    for path in (tmp_path / "missing.png", tmp_path, unsupported):
+        with pytest.raises(CppExportError) as failure:
+            generate_cpp(
+                Graph(
+                    nodes=[NodeInstance(id="input", type="load_image", params={"path": str(path)})]
+                )
+            )
+        assert failure.value.detail["node_id"] == "input"
+    for params in ({"min_area": 5001.0}, {"min_convexity": 0.0}):
+        with pytest.raises(CppExportError) as failure:
+            generate_cpp(
+                Graph(
+                    nodes=[
+                        NodeInstance(id="source", type="blank_image"),
+                        NodeInstance(id="blob", type="blob_detect", params=params),
+                    ],
+                    edges=[Edge(id="e", source="source", target="blob")],
+                )
+            )
+        assert failure.value.detail["node_id"] == "blob"
+
+
+def test_duplicate_edge_id_rejected():
+    graph = Graph(
+        nodes=[
+            NodeInstance(id="source", type="blank_image"),
+            NodeInstance(id="one", type="preview"),
+            NodeInstance(id="two", type="preview"),
+        ],
+        edges=[
+            Edge(id="same", source="source", target="one"),
+            Edge(id="same", source="source", target="two"),
+        ],
+    )
+    with pytest.raises(CppExportError, match="Duplicate edge id"):
+        generate_cpp(graph)

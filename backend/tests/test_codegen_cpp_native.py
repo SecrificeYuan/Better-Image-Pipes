@@ -9,6 +9,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 
 from app.models.graph import Edge, Graph, NodeInstance
 from app.services.cpp_codegen import SUPPORTED_TYPES, generate_cpp
@@ -217,7 +218,110 @@ def test_runtime_failures(tmp_path):
     assert result.returncode != 0
 
 
-def test_opencv_454_compatibility(tmp_path):
-    graph = Graph(nodes=[NodeInstance(id="blank", type="blank_image")])
-    binary = compile_program(generate_cpp(graph).code, tmp_path)
+def test_optional_inputs_and_drawing_branches(tmp_path):
+    image_path = tmp_path / "实际 ' 图像.png"
+    image = real_image(image_path)
+    output = tmp_path / "optional-results"
+    graph = Graph(
+        nodes=[
+            NodeInstance(id="input", type="load_image", params={"path": str(image_path)}),
+            NodeInstance(id="gray", type="to_gray"),
+            NodeInstance(id="mask", type="threshold", params={"thresh": 128.0}),
+            NodeInstance(id="blank", type="blank_image", params={"width": 1, "height": 1}),
+            NodeInstance(id="masked", type="bitwise", params={"op": "and"}),
+            NodeInstance(id="arithmetic", type="arithmetic", params={"op": "multiply"}),
+            NodeInstance(id="draw", type="find_contours"),
+            NodeInstance(id="preview", type="preview"),
+        ],
+        edges=[
+            Edge(id="gray", source="input", target="gray"),
+            Edge(id="mask", source="gray", target="mask"),
+            Edge(id="size", source="input", target="blank", target_port="size_ref"),
+            *[
+                Edge(id=kind + port, source=source, target=kind, target_port=port)
+                for kind in ("masked", "arithmetic")
+                for port, source in (("a", "input"), ("b", "gray"), ("mask", "mask"))
+            ],
+            Edge(id="draw", source="input", target="draw"),
+            Edge(id="preview", source="input", target="preview"),
+        ],
+    )
+    from app.engine.registry import registry
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    mask = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)[1]
+    expected = {"blank": np.zeros_like(image), "preview": image}
+    for kind, node_type in (("masked", "bitwise"), ("arithmetic", "arithmetic")):
+        impl = registry.get(node_type)
+        params = impl.default_params() | next(n.params for n in graph.nodes if n.id == kind)
+        expected[kind] = impl.execute({"a": image.copy(), "b": gray.copy(), "mask": mask}, params)[
+            "image"
+        ]
+    impl = registry.get("find_contours")
+    expected["draw"] = impl.execute({"image": image.copy()}, impl.default_params())["image"]
+    for node in expected:
+        save = node + "-save"
+        graph.nodes.append(
+            NodeInstance(
+                id=save,
+                type="save_image",
+                params={
+                    "output_dir": str(output),
+                    "filename": node + ".png",
+                },
+            )
+        )
+        graph.edges.append(Edge(id=save, source=node, target=save))
+    run(compile_program(generate_cpp(graph).code, tmp_path / "build"))
+    for node, reference in expected.items():
+        np.testing.assert_array_equal(cv2.imread(str(output / (node + ".png"))), reference)
+
+
+@pytest.mark.parametrize("seed", [0, 4294967295])
+def test_random_seed_boundaries(tmp_path, seed):
+    image_path = tmp_path / "seed.png"
+    image = real_image(image_path)
+    graph = Graph(
+        nodes=[
+            NodeInstance(id="source", type="load_image", params={"path": str(image_path)}),
+            NodeInstance(id="kmeans", type="kmeans_colors", params={"k": 3}),
+            NodeInstance(
+                id="save",
+                type="save_image",
+                params={
+                    "output_dir": str(tmp_path / "images"),
+                    "filename": "seed_{index}.png",
+                },
+            ),
+        ],
+        edges=[
+            Edge(id="a", source="source", target="kmeans"),
+            Edge(id="b", source="kmeans", target="save"),
+        ],
+    )
+    binary = compile_program(generate_cpp(graph, seed, iteration_count=2).code, tmp_path / "build")
     run(binary)
+    for index in range(2):
+        quantized = cv2.imread(str(tmp_path / "images" / f"seed_{index}.png"))
+        assert len(np.unique(quantized.reshape(-1, 3), axis=0)) == 3
+        source = image.astype(np.float64)
+        assert np.mean((source - quantized) ** 2) < np.mean(
+            (source - source.mean(axis=(0, 1))) ** 2
+        )
+    run(binary)
+    for index in range(2):
+        original = tmp_path / "images" / f"seed_{index}.png"
+        assert original.read_bytes() == original.with_stem(f"seed_{index}_2").read_bytes()
+
+
+def test_opencv_454_compatibility(tmp_path):
+    image_path = tmp_path / "compatibility.png"
+    real_image(image_path)
+    defaults = [case for case in cases() if case.name == case.kind]
+    graph, _ = graph_for_cases(defaults, image_path, tmp_path / "images")
+    binary = compile_program(generate_cpp(graph).code, tmp_path / "build")
+    run(binary)
+    print(
+        "Compatibility OpenCV "
+        + subprocess.check_output(["pkg-config", "--modversion", "opencv4"], text=True).strip()
+    )
