@@ -18,7 +18,7 @@
     "@hookform/resolvers": "^5.5.7",
     "@monaco-editor/react": "^4.7.0",
     "@mui/material": "^9.2.0",
-    "@tanstack/react-query": "^5.101.4",
+    "@tanstack/react-query": "^5.104.1",
     "@xyflow/react": "^12.11.2",
     "i18next": "26.4.2",
     "notistack": "^3.0.2",
