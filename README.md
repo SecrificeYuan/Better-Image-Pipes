@@ -4,7 +4,7 @@
 
 ### Stop scripting. Start seeing.
 
-**Build computer vision pipelines visually — inspect every pixel transformation in real time, then export clean, production-ready Python the moment you're happy with the result.**
+**Build computer vision pipelines visually, inspect image transformations, and export standalone Python or C++17 OpenCV programs. English and Chinese interfaces are included.**
 
 <p>
   <img src="https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white" />
@@ -18,7 +18,7 @@
 
 **⚡ Build • Preview • Experiment • Export**
 
-[Download](https://github.com/mrajaeim/image-pipes/releases) •
+[Download](https://github.com/SecrificeYuan/Better-Image-Pipes/releases) •
 [Demo](#-demo) •
 [Features](#-features) •
 [Architecture](#-architecture) •
@@ -27,6 +27,12 @@
 [Roadmap](#-roadmap)
 
 </div>
+
+## Better Image Pipes 0.4.0
+
+This development repository preserves the upstream MIT license and history. The complete Windows baseline is backed up in the [baseline Release](https://github.com/SecrificeYuan/Better-Image-Pipes/releases/tag/baseline-20261010), with a per-file manifest and SHA-256 checksums.
+
+Choose **C++** in the Code panel to generate and download `pipeline.cpp`. The exporter covers 54 built-in OpenCV nodes, validates the complete graph, supports image batches and ZIP output, and invalidates generated C++ when the workflow changes. See the [C++ export guide](docs/cpp-export.md) and [frozen implementation scope](docs/cpp-export-plan.md) for compilation, supported semantics and verification.
 
 ## 🚀 Experience the Workflow
 

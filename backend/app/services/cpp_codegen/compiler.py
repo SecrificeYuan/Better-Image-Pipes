@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from app.engine.registry import registry
 from app.models.graph import Graph, PortDirection
 from app.nodes import register_builtin_nodes
+from app.nodes.common import IMAGE_EXTENSIONS
 from app.nodes.io import resolve_load_paths
 
 from . import analysis, clustering, color, common, filters, geometry, io, morphology, structure
@@ -60,6 +61,12 @@ def validated_params(node):
                 fail(f"Parameter '{field.name}' above maximum {field.maximum}", node)
         if isinstance(value, str) and "\0" in value:
             fail(f"Parameter '{field.name}' contains a null character", node)
+    if node.type == "blob_detect":
+        if params["min_area"] > params["max_area"]:
+            fail("Blob minimum area exceeds maximum area", node)
+        for name in ("min_circularity", "min_convexity", "min_inertia"):
+            if params[name] <= 0:
+                fail(f"Parameter '{name}' must be greater than zero", node)
     return params
 
 
@@ -87,10 +94,14 @@ def validate(graph):
         if edge.source not in nodes or edge.target not in nodes:
             fail(f"Edge '{edge.id}' refers to an unknown node")
         target = nodes[edge.target]
-        source_ports = {p.id: p for p in registry.get(nodes[edge.source].type).ports
-                        if p.direction == PortDirection.OUTPUT}
-        target_ports = {p.id: p for p in registry.get(target.type).ports
-                        if p.direction == PortDirection.INPUT}
+        source_ports = {
+            p.id: p
+            for p in registry.get(nodes[edge.source].type).ports
+            if p.direction == PortDirection.OUTPUT
+        }
+        target_ports = {
+            p.id: p for p in registry.get(target.type).ports if p.direction == PortDirection.INPUT
+        }
         if edge.source_port not in source_ports or edge.target_port not in target_ports:
             fail(f"Edge '{edge.id}' refers to an unknown port", target)
         if source_ports[edge.source_port].data_type != target_ports[edge.target_port].data_type:
@@ -126,20 +137,25 @@ def generate_cpp(graph: Graph, seed: int = 0, iteration_count: int = 1) -> CppEx
     if type(iteration_count) is not int or not 1 <= iteration_count <= 2**31 - 1:
         fail("Iteration count must be a positive 32-bit integer")
     nodes, parameters, incoming, order = validate(graph)
-    zip_enabled = any(n.type == "save_image" and parameters[n.id]["packaging"] == "zip"
-                      for n in graph.nodes)
+    zip_enabled = any(
+        n.type == "save_image" and parameters[n.id]["packaging"] == "zip" for n in graph.nodes
+    )
     dependencies = ["opencv"] + (["libarchive"] if zip_enabled else [])
-    config = [f"const uint64_t pipeline_seed = {seed}ULL;",
-              f"const size_t pipeline_iterations = {iteration_count};"]
+    config = [
+        f"const uint64_t pipeline_seed = {seed}ULL;",
+        f"const size_t pipeline_iterations = {iteration_count};",
+    ]
     load_code = []
     variables = {}
     batch_size = 1
     for index, node_id in enumerate(order):
         node = nodes[node_id]
         params = parameters[node_id]
-        variables[node_id] = {p.id: f"n{index}_{p.id}"
-                              for p in registry.get(node.type).ports
-                              if p.direction == PortDirection.OUTPUT}
+        variables[node_id] = {
+            p.id: f"n{index}_{p.id}"
+            for p in registry.get(node.type).ports
+            if p.direction == PortDirection.OUTPUT
+        }
         if node.type == "load_image":
             from app.services.assets import get_batch
 
@@ -153,53 +169,90 @@ def generate_cpp(graph: Graph, seed: int = 0, iteration_count: int = 1) -> CppEx
                 path_value = params.get("path", "")
                 if not isinstance(path_value, str) or not Path(path_value).exists():
                     fail("Load Images requires existing files or an asset batch", node)
+                path = Path(path_value)
+                if path.is_file() and path.suffix.lower() not in IMAGE_EXTENSIONS:
+                    fail("Unsupported input image extension", node)
+                if path.is_dir() and not any(
+                    p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS for p in path.iterdir()
+                ):
+                    fail("Input directory contains no images", node)
                 paths = resolve_load_paths(params)
             if not paths or any(not path.is_file() for path in paths):
                 fail("Input image files are missing", node)
             source = f"source_{index}"
             params["_cpp_source"] = source
-            config += [f"const std::vector<std::string> {source}_paths = {{",
-                       *[f"    {common.literal(str(path))}," for path in paths], "};"]
-            load_code += [f"std::vector<cv::Mat> {source}_images;",
-                          f"for (const auto& path : {source}_paths) {source}_images.push_back(read_image(path));"]
+            config += [
+                f"const std::vector<std::string> {source}_paths = {{",
+                *[f"    {common.literal(str(path))}," for path in paths],
+                "};",
+            ]
+            load_code += [
+                f"std::vector<cv::Mat> {source}_images;",
+                f"for (const auto& path : {source}_paths) "
+                f"{source}_images.push_back(read_image(path));",
+            ]
             batch_size = max(batch_size, len(paths))
         if node.type == "save_image":
             name = f"output_{index}"
             params["_cpp_output"] = name
-            config += [f"const std::string {name} = {common.literal(params['output_dir'] or 'output')};"]
+            config += [
+                f"const std::string {name} = {common.literal(params['output_dir'] or 'output')};"
+            ]
     flags = "opencv4 libarchive" if zip_enabled else "opencv4"
-    lines = ["// Generated by Better Image Pipes. C++17.",
-             f"// Linux: g++ -std=c++17 pipeline.cpp -o pipeline $(pkg-config --cflags --libs {flags})",
-             "// Windows: compile with /std:c++17 /utf-8 and link the declared OpenCV modules.",
-             "// Dependencies: " + ", ".join(dependencies),
-             "// Random colors and k-means are reproducible within this native OpenCV environment.",
-             common.RUNTIME, analysis.RUNTIME, clustering.RUNTIME]
+    lines = [
+        "// Generated by Better Image Pipes. C++17.",
+        f"// Linux: g++ -std=c++17 pipeline.cpp -o pipeline $(pkg-config --cflags --libs {flags})",
+        "// Windows: compile with /std:c++17 /utf-8 and link the declared OpenCV modules.",
+        "// Dependencies: " + ", ".join(dependencies),
+        "// Random colors and k-means are reproducible within this native OpenCV environment.",
+        common.RUNTIME,
+        analysis.RUNTIME,
+        clustering.RUNTIME,
+    ]
     if zip_enabled:
         lines += [io.ZIP_RUNTIME]
-    lines += ["\n// Editable pipeline configuration.", *config, "", "void run_pipeline() {",
-              "    cv::setNumThreads(1);", *["    " + line for line in load_code]]
+    lines += [
+        "\n// Editable pipeline configuration.",
+        *config,
+        "",
+        "void run_pipeline() {",
+        "    cv::setNumThreads(1);",
+        *["    " + line for line in load_code],
+    ]
     if zip_enabled:
         lines += ["    ZipBuckets zip_buckets;"]
-    lines += ["    for (size_t iteration = 0; iteration < pipeline_iterations; ++iteration) {",
-              "        uint64_t iteration_seed = pipeline_seed + iteration;",
-              "        (void)iteration_seed;",
-              f"        for (size_t batch_index = 0; batch_index < {batch_size}; ++batch_index) {{",
-              f"            size_t sample_index = iteration * {batch_size} + batch_index;",
-              "            (void)sample_index;", "            std::string source_stem = \"image\";"]
+    lines += [
+        "    for (size_t iteration = 0; iteration < pipeline_iterations; ++iteration) {",
+        "        uint64_t iteration_seed = pipeline_seed + iteration;",
+        "        (void)iteration_seed;",
+        f"        for (size_t batch_index = 0; batch_index < {batch_size}; ++batch_index) {{",
+        f"            size_t sample_index = iteration * {batch_size} + batch_index;",
+        "            (void)sample_index;",
+        '            std::string source_stem = "image";',
+    ]
     for node_id in order:
         node = nodes[node_id]
         output = variables[node_id]
-        inputs = {port: variables[edge.source][edge.source_port]
-                  for port, edge in incoming[node_id].items()}
+        inputs = {
+            port: variables[edge.source][edge.source_port]
+            for port, edge in incoming[node_id].items()
+        }
         lines += [f"            cv::Mat {var};" for var in output.values()]
-        lines += [f"            // node: {common.literal(node_id)} ({node.type})",
-                  "            {",
-                  f"                std::clog << \"processing \" << {common.literal(node_id)} << '\\n';"]
+        lines += [
+            f"            // node: {common.literal(node_id)} ({node.type})",
+            "            {",
+            f"                std::clog << \"processing \" << {common.literal(node_id)} << '\\n';",
+        ]
         statements = EMITTERS[node.type](node.type, parameters[node_id], inputs, output)
         lines += ["                " + statement for statement in statements]
         for port, var in output.items():
-            lines += [f"                require(!{var}.empty(), \"Empty output: \" + std::string({common.literal(node_id + ':' + port)}));",
-                      f"                std::cout << \"produced \" << {common.literal(node_id + ':' + port)} << \" \" << {var}.rows << \"x\" << {var}.cols << \"x\" << {var}.channels() << '\\n';"]
+            lines += [
+                f'                require(!{var}.empty(), "Empty output: " + '
+                f'std::string({common.literal(node_id + ":" + port)}));',
+                f'                std::cout << "produced " << '
+                f'{common.literal(node_id + ":" + port)} << " " << {var}.rows << "x" '
+                f'<< {var}.cols << "x" << {var}.channels() << \'\\n\';',
+            ]
         lines += ["            }"]
     lines += ["        }", "    }"]
     if zip_enabled:

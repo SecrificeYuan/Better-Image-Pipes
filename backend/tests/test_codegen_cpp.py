@@ -21,23 +21,34 @@ def test_complete_source():
     assert "Python" not in code
 
 
-@pytest.mark.parametrize("graph", [
-    Graph(),
-    Graph(nodes=[blank(), blank()]),
-    Graph(nodes=[NodeInstance(id="x", type="custom_python")]),
-    Graph(nodes=[NodeInstance(id="x", type="gaussian_noise")]),
-    Graph(nodes=[NodeInstance(id="x", type="resize")]),
-    Graph(nodes=[NodeInstance(id="x", type="blank_image", params={"width": "32"})]),
-    Graph(nodes=[NodeInstance(id="x", type="blank_image", params={"width": 0})]),
-    Graph(nodes=[NodeInstance(id="x", type="load_image", params={"asset_batch_id": "missing"})]),
-    Graph(nodes=[blank()], edges=[Edge(id="e", source="missing", target=blank().id)]),
-    Graph(nodes=[NodeInstance(id="a", type="preview"), NodeInstance(id="b", type="preview")],
-          edges=[Edge(id="e1", source="a", target="b"), Edge(id="e2", source="b", target="a")]),
-    Graph(nodes=[NodeInstance(id="a", type="blank_image"), NodeInstance(id="b", type="preview")],
-          edges=[Edge(id="e1", source="a", target="b", target_port="missing")]),
-    Graph(nodes=[NodeInstance(id="a", type="blank_image"), NodeInstance(id="b", type="preview")],
-          edges=[Edge(id="e1", source="a", target="b"), Edge(id="e2", source="a", target="b")]),
-])
+@pytest.mark.parametrize(
+    "graph",
+    [
+        Graph(),
+        Graph(nodes=[blank(), blank()]),
+        Graph(nodes=[NodeInstance(id="x", type="custom_python")]),
+        Graph(nodes=[NodeInstance(id="x", type="gaussian_noise")]),
+        Graph(nodes=[NodeInstance(id="x", type="resize")]),
+        Graph(nodes=[NodeInstance(id="x", type="blank_image", params={"width": "32"})]),
+        Graph(nodes=[NodeInstance(id="x", type="blank_image", params={"width": 0})]),
+        Graph(
+            nodes=[NodeInstance(id="x", type="load_image", params={"asset_batch_id": "missing"})]
+        ),
+        Graph(nodes=[blank()], edges=[Edge(id="e", source="missing", target=blank().id)]),
+        Graph(
+            nodes=[NodeInstance(id="a", type="preview"), NodeInstance(id="b", type="preview")],
+            edges=[Edge(id="e1", source="a", target="b"), Edge(id="e2", source="b", target="a")],
+        ),
+        Graph(
+            nodes=[NodeInstance(id="a", type="blank_image"), NodeInstance(id="b", type="preview")],
+            edges=[Edge(id="e1", source="a", target="b", target_port="missing")],
+        ),
+        Graph(
+            nodes=[NodeInstance(id="a", type="blank_image"), NodeInstance(id="b", type="preview")],
+            edges=[Edge(id="e1", source="a", target="b"), Edge(id="e2", source="a", target="b")],
+        ),
+    ],
+)
 def test_invalid_graphs_fail(graph):
     with pytest.raises(CppExportError) as failure:
         generate_cpp(graph)
@@ -47,11 +58,16 @@ def test_invalid_graphs_fail(graph):
 
 def test_python_generator_matches_public_baseline():
     source = subprocess.check_output(
-        ["git", "show", "baseline-20261010:backend/app/services/codegen.py"], text=True,
+        ["git", "show", "baseline-20261010:backend/app/services/codegen.py"],
+        text=True,
     )
     namespace = {}
     exec(compile(source, "baseline-codegen.py", "exec"), namespace)
-    graph = Graph(nodes=[NodeInstance(id="blank", type="blank_image"),
-                        NodeInstance(id="blur", type="gaussian_blur")],
-                  edges=[Edge(id="e", source="blank", target="blur")])
+    graph = Graph(
+        nodes=[
+            NodeInstance(id="blank", type="blank_image"),
+            NodeInstance(id="blur", type="gaussian_blur"),
+        ],
+        edges=[Edge(id="e", source="blank", target="blur")],
+    )
     assert generate_python(graph, 12) == namespace["generate_python"](graph, 12)

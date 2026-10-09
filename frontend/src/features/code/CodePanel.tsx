@@ -67,7 +67,8 @@ export function CodePanel() {
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ px: 2, pt: 2, pb: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ px: 2, pt: 1, pb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
         <Typography variant="subtitle1" sx={{ fontFamily: '"Fraunces", Georgia, serif', fontWeight: 700 }}>
           {tr(cpp ? 'C++ Export' : 'Python Export')}
         </Typography>
@@ -76,9 +77,10 @@ export function CodePanel() {
           <ToggleButton value="python">Python</ToggleButton>
           <ToggleButton value="cpp">C++</ToggleButton>
         </ToggleButtonGroup>
-        <Typography sx={{ color: 'rgba(244,241,234,0.55)', fontSize: 13, lineHeight: 1.5 }}>
+        </Box>
+        {placeholder && <Typography sx={{ color: 'rgba(244,241,234,0.55)', fontSize: 13, lineHeight: 1.5 }}>
           {tr(cpp ? 'Generate a standalone OpenCV C++17 program from the current pipeline.' : 'Generate a standalone OpenCV script from the current pipeline.')}
-        </Typography>
+        </Typography>}
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Button variant="outlined" disabled={disabled} onClick={() => void generate()}
             sx={{ alignSelf: 'flex-start', textTransform: 'none', fontWeight: 650,

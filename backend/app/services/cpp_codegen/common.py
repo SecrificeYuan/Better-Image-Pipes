@@ -14,7 +14,7 @@ def odd(value: int) -> int:
     return value if value % 2 else value + 1
 
 
-RUNTIME = r'''
+RUNTIME = r"""
 #include <opencv2/opencv.hpp>
 #include <algorithm>
 #include <cmath>
@@ -131,7 +131,10 @@ void replace_all(std::string& text, const std::string& from, const std::string& 
 std::string filename_for(std::string name, const std::string& stem, size_t index) {
     bool indexed = name.find("{filename}") != std::string::npos ||
         name.find("{time}") != std::string::npos || name.find("{index}") != std::string::npos;
-    replace_all(name, "{filename}", stem);
+    std::string safe_stem = fs::u8path(stem).stem().u8string();
+    if (safe_stem.empty()) safe_stem = "image";
+    replace_all(safe_stem, "/", "_"); replace_all(safe_stem, "\\", "_");
+    replace_all(name, "{filename}", safe_stem);
     replace_all(name, "{time}", timestamp());
     replace_all(name, "{index}", std::to_string(index));
     name = fs::u8path(name).filename().u8string();
@@ -156,8 +159,9 @@ void write_image(const fs::path& path, const cv::Mat& image) {
     fs::create_directories(path.parent_path());
     std::ofstream file(path, std::ios::binary);
     require(file.is_open(), "Cannot create image: " + path.u8string());
-    file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+    file.write(reinterpret_cast<const char*>(bytes.data()),
+        static_cast<std::streamsize>(bytes.size()));
     file.close();
     require(!file.fail(), "Cannot write image: " + path.u8string());
 }
-'''
+"""

@@ -12,10 +12,12 @@ def emit(kind, p, i, o):
             return lines + [f"{d} = {s}.clone();"]
         lines += [f"cv::bitwise_and({s}, {s}, {d}, mask);"]
         if p["fill"] == "white":
-            lines += ["cv::Mat inverse, background; cv::bitwise_not(mask, inverse);",
-                      f"cv::Mat white({s}.size(), {s}.type(), cv::Scalar::all(255));",
-                      "cv::bitwise_and(white, white, background, inverse);",
-                      f"cv::add({d}, background, {d});"]
+            lines += [
+                "cv::Mat inverse, background; cv::bitwise_not(mask, inverse);",
+                f"cv::Mat white({s}.size(), {s}.type(), cv::Scalar::all(255));",
+                "cv::bitwise_and(white, white, background, inverse);",
+                f"cv::add({d}, background, {d});",
+            ]
         return lines
     lines = [f"cv::Mat a = {i['a']}, b = {i['b']};", "align_pair(a, b);"]
     mask = "cv::noArray()"

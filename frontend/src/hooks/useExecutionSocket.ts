@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import { notifyError, notifyInfo, notifySuccess } from '../notify'
 import type { ExecutionEvent } from '../types'
+import { messageText, tr } from '../i18n'
 
 export type RunOptions = {
   targetNodeId?: string
@@ -228,8 +229,10 @@ export async function requestCppCodegen(): Promise<{
     const detail = payload.detail
     const message = typeof detail?.message === 'string' ? detail.message : JSON.stringify(detail)
     throw new Error(detail?.node_id
-      ? `C++ export failed at ${detail.node_id} (${detail.node_type}): ${message}`
-      : message)
+      ? tr('C++ export failed at {{v0}} ({{v1}}): {{v2}}', {
+        v0: detail.node_id, v1: detail.node_type, v2: messageText(message),
+      })
+      : messageText(message))
   }
   return payload
 }

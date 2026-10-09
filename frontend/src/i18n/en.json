@@ -1038,5 +1038,21 @@
   "Duplicate node id": "Duplicate node id",
   "Asset batch was not found": "Asset batch was not found",
   "Load Images requires existing files or an asset batch": "Load Images requires existing files or an asset batch",
-  "Input image files are missing": "Input image files are missing"
+  "Input image files are missing": "Input image files are missing",
+  "Parameter '{{v0}}' must be an integer": "Parameter '{{v0}}' must be an integer",
+  "Parameter '{{v0}}' must be a finite number": "Parameter '{{v0}}' must be a finite number",
+  "Parameter '{{v0}}' must be a string": "Parameter '{{v0}}' must be a string",
+  "Parameter '{{v0}}' contains a null character": "Parameter '{{v0}}' contains a null character",
+  "Parameter '{{v0}}' must be greater than zero": "Parameter '{{v0}}' must be greater than zero",
+  "Blob minimum area exceeds maximum area": "Blob minimum area exceeds maximum area",
+  "Duplicate edge id '{{v0}}'": "Duplicate edge id '{{v0}}'",
+  "Edge '{{v0}}' refers to an unknown node": "Edge '{{v0}}' refers to an unknown node",
+  "Edge '{{v0}}' refers to an unknown port": "Edge '{{v0}}' refers to an unknown port",
+  "Edge '{{v0}}' connects incompatible port types": "Edge '{{v0}}' connects incompatible port types",
+  "Multiple connections to input '{{v0}}'": "Multiple connections to input '{{v0}}'",
+  "Missing required input '{{v0}}'": "Missing required input '{{v0}}'",
+  "Seed must be an integer between 0 and 4294967295": "Seed must be an integer between 0 and 4294967295",
+  "Iteration count must be a positive 32-bit integer": "Iteration count must be a positive 32-bit integer",
+  "Unsupported input image extension": "Unsupported input image extension",
+  "Input directory contains no images": "Input directory contains no images"
 }

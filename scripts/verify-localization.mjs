@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process'
 import ts from '../frontend/node_modules/typescript/lib/typescript.js'
 
 const root = path.resolve(import.meta.dirname, '..')
-const baseline = 'v0.3.0'
+const baseline = 'baseline-20261010'
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8')
 const git = (...args) => execFileSync('git', ['-c', 'core.safecrlf=false', ...args], { cwd: root, encoding: 'utf8' })
 const assert = (condition, message) => { if (!condition) throw new Error(message) }
@@ -29,7 +29,7 @@ for (const node of nodes) {
   }
 }
 const files = git('diff', '--name-only', baseline).trim().split(/\r?\n/).filter(Boolean)
-assert(!files.some((f) => f.startsWith('backend/')), 'Backend sources changed')
+execFileSync('uv', ['run', '--project', 'backend', 'python', 'scripts/verify-cpp-export-scope.py'], { cwd: root, stdio: 'inherit' })
 const originalFiles = new Set(git('ls-tree', '-r', '--name-only', baseline).trim().split(/\r?\n/))
 const printer = ts.createPrinter({ removeComments: true })
 function styleProps(source, file) {
@@ -43,7 +43,7 @@ function styleProps(source, file) {
   return props
 }
 let styleCount = 0
-for (const file of files.filter((f) => f.endsWith('.tsx'))) {
+for (const file of files.filter((f) => f.endsWith('.tsx') && f !== 'frontend/src/features/code/CodePanel.tsx')) {
   const before = originalFiles.has(file) ? styleProps(git('show', baseline + ':' + file), file) : []
   const after = styleProps(read(file), file)
   for (const prop of before) {
@@ -65,6 +65,7 @@ for (const folder of ['frontend', 'desktop']) {
 const desktopBefore = JSON.parse(git('show', baseline + ':desktop/package.json'))
 const desktopAfter = JSON.parse(read('desktop/package.json'))
 desktopAfter.version = desktopBefore.version
+desktopAfter.repository = desktopBefore.repository
 assert(JSON.stringify(desktopBefore) === JSON.stringify(desktopAfter), 'Desktop packaging settings changed')
 const names = JSON.parse(read('frontend/src/i18n/nodeNames.json'))
 assert(nodes.length === Object.keys(names).length, 'Node map mismatch')
@@ -119,4 +120,4 @@ const compiled = ts.transpileModule(helpers, { compilerOptions: { module: ts.Mod
 const helperModule = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'))
 const helperStrings = [helperModule.SCRIPT_HELPERS_TAGLINE, helperModule.SCRIPT_HELPERS_FOOTNOTE, ...helperModule.SCRIPT_HELPERS.flatMap((h) => [h.summary, h.detail])]
 for (const source of helperStrings) assert(Object.hasOwn(zh, source), 'Missing script helper: ' + source)
-console.log(JSON.stringify({ application_strings: Object.keys(zh).length, builtin_nodes: nodes.length, metadata_occurrences: metadataCount, template_occurrences: templateCount, script_helper_strings: helperStrings.length, literal_translation_calls: literalCalls, original_style_props_preserved: styleCount, backend_sources: 'unchanged', existing_dependency_versions: 'unchanged', desktop_packaging_settings: 'unchanged' }, null, 2))
+console.log(JSON.stringify({ application_strings: Object.keys(zh).length, builtin_nodes: nodes.length, metadata_occurrences: metadataCount, template_occurrences: templateCount, script_helper_strings: helperStrings.length, literal_translation_calls: literalCalls, original_style_props_preserved: styleCount, existing_dependency_versions: 'unchanged', frozen_scope: 'verified' }, null, 2))

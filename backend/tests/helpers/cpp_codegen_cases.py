@@ -26,8 +26,13 @@ def cases():
             if field.options:
                 for option in field.options:
                     if option != field.default:
-                        result.append(Case(f"{kind}-{field.name}-{option}", kind,
-                                           impl.default_params() | {field.name: option}))
+                        result.append(
+                            Case(
+                                f"{kind}-{field.name}-{option}",
+                                kind,
+                                impl.default_params() | {field.name: option},
+                            )
+                        )
         for field in impl.params:
             if field.type in {"int", "integer", "number"}:
                 for label, value in (("min", field.minimum), ("max", field.maximum)):
@@ -36,13 +41,20 @@ def cases():
                     # Coordinates at the image edge produce empty crops; these are failure cases.
                     if kind == "crop" and field.name in {"x", "y"} and value >= 128:
                         continue
-                    # Sobel derivative order must fit the kernel aperture.
-                    if kind == "sobel" and field.name == "ksize" and value == 1:
-                        pass
                     if field.type in {"int", "integer"}:
                         value = int(value)
-                    result.append(Case(f"{kind}-{field.name}-{label}", kind,
-                                       impl.default_params() | {field.name: value}))
+                    params = impl.default_params() | {field.name: value}
+                    if kind == "blob_detect":
+                        if (
+                            field.name in {"min_circularity", "min_convexity", "min_inertia"}
+                            and value == 0
+                        ):
+                            continue  # OpenCV 4.13 requires these limits to be positive.
+                        params["max_area"] = max(params["min_area"], params["max_area"])
+                        if field.name == "max_area":
+                            params["min_area"] = min(params["min_area"], value)
+                            params["max_area"] = value
+                    result.append(Case(f"{kind}-{field.name}-{label}", kind, params))
     return result
 
 
@@ -75,14 +87,20 @@ def graph_for_cases(items, image_path: Path, output: Path):
             if port.direction.value == "input" and not port.optional:
                 source = "source"
                 inputs[port.id] = image.copy()
-                if port.id == "mask":
-                    mask_id = case.name + "-mask"
+                if port.id == "mask" or kind == "merge_channels":
+                    mask_id = case.name + "-" + port.id + "-input"
                     nodes.append(NodeInstance(id=mask_id, type="to_gray"))
-                    edges.append(Edge(id=mask_id, source="source", target=mask_id))
+                    edges.append(Edge(id=mask_id + "-feed", source="source", target=mask_id))
                     source = mask_id
                     inputs[port.id] = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                edges.append(Edge(id=case.name + "-" + port.id, source=source,
-                                  target=case.name, target_port=port.id))
+                edges.append(
+                    Edge(
+                        id=case.name + "-" + port.id,
+                        source=source,
+                        target=case.name,
+                        target_port=port.id,
+                    )
+                )
         if kind == "load_image":
             expected[case.name] = {"image": image}
         elif kind == "save_image":
@@ -94,8 +112,15 @@ def graph_for_cases(items, image_path: Path, output: Path):
             if port.direction.value != "output":
                 continue
             save_id = case.name + "-observe-" + port.id
-            nodes.append(NodeInstance(id=save_id, type="save_image", params={
-                "output_dir": str(output), "filename": case.name + "-" + port.id + ".png",
-            }))
+            nodes.append(
+                NodeInstance(
+                    id=save_id,
+                    type="save_image",
+                    params={
+                        "output_dir": str(output),
+                        "filename": case.name + "-" + port.id + ".png",
+                    },
+                )
+            )
             edges.append(Edge(id=save_id, source=case.name, source_port=port.id, target=save_id))
     return Graph(nodes=nodes, edges=edges), expected

@@ -9,7 +9,7 @@ from urllib.parse import unquote
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.user_scripts import router as user_scripts_router
 from app.engine.executor import DagExecutor
@@ -42,8 +42,8 @@ class CodegenResponse(BaseModel):
 
 class CppCodegenBody(BaseModel):
     graph: Graph
-    seed: int = 0
-    iteration_count: int = 1
+    seed: int = Field(default=0, strict=True, ge=0, le=4294967295)
+    iteration_count: int = Field(default=1, strict=True, ge=1, le=2147483647)
 
 
 class CppCodegenResponse(BaseModel):
