@@ -53,3 +53,24 @@ python -m pytest tests/test_codegen_cpp_native.py -k compatibility
 前端：`npm run typecheck`、`npm run lint`、`npm run build`、`npm run test:e2e`。端到端测试启动真实后端和 Vite，使用 Chromium 和 Monaco，输出下载文件及中文界面截图。冻结范围：`uv run --project backend python scripts/verify-cpp-export-scope.py`。
 
 libarchive 文件名处理遵循其 [文件名说明](https://github.com/libarchive/libarchive/wiki/Filenames) 和 [官方示例](https://github.com/libarchive/libarchive/wiki/Examples)，ZIP 写入使用 UTF-8 字符环境。
+
+## 2026-10-10 验收记录
+
+| 验证内容 | 结果 |
+|---|---|
+| Python/C++ OpenCV 4.13.0，54 个节点及 250 组参数 | 通过 |
+| 后端校验、API、批量、分支、掩码、ZIP、失败及种子边界 | 29 项通过 |
+| OpenCV 4.5.4 完整 54 节点流程编译及运行 | 通过 |
+| 真实 Chromium、Monaco C++ 语法、双语、下载及过期状态 | 3 项通过 |
+| 类型检查、ESLint、后端 Ruff、生产构建、双语及冻结范围 | 通过 |
+| Windows 0.4.0 安装程序窗口启动 | 通过 |
+| 打包后的 Windows 桌面程序：生成并下载 C++，实际运行流程 | 通过 |
+| 桌面下载文件：WSL OpenCV 4.13.0 编译运行、两次迭代 | 通过 |
+
+安装包：`ImagePipes-Setup-0.4.0.exe`，200282319 字节。SHA-256：
+
+```text
+54e337ab5d6d70e354ba2264188d12c661c4c1e3cab55293bfbc396b2f748790
+```
+
+[安装包与逐项验证报告](https://github.com/SecrificeYuan/Better-Image-Pipes/releases/tag/cpp-export-0.4.0)。完整文件备份另见基线 Release。
