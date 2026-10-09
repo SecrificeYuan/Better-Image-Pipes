@@ -1,6 +1,6 @@
 {
   "name": "image-pipes-desktop",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Electron shell for Image Pipes",
   "main": "src/main.cjs",
@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mrajaeim/image-pipes.git"
+    "url": "https://github.com/SecrificeYuan/Better-Image-Pipes.git"
   },
   "build": {
     "appId": "com.imagepipes.app",
     "productName": "Image Pipes",
-    "copyright": "Copyright © Image Pipes contributors",
+    "copyright": "Copyright \u6f0f Image Pipes contributors",
     "publish": null,
     "directories": {
       "output": "release",
@@ -33,29 +33,39 @@
       {
         "from": "resources/server",
         "to": "server",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "../backend/examples",
         "to": "server/examples",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "ImagePipes-Setup-${version}.${ext}"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "artifactName": "ImagePipes-${version}.${ext}"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "artifactName": "ImagePipes-${version}.${ext}",
       "category": "Graphics"
     },

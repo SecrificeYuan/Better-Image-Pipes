@@ -1021,5 +1021,22 @@
   "Invalid enum value. Expected {{v0}}, received {{v1}}": "无效选项。可选值为 {{v0}}，收到 {{v1}}",
   "{{v0}} bbox": "{{v0}} 个边界框",
   "{{v0}} bboxes": "{{v0}} 个边界框",
-  "{{v0}} kp": "{{v0}} 个关键点"
+  "{{v0}} kp": "{{v0}} 个关键点",
+  "C++ Export": "导出 C++",
+  "Export language": "导出语言",
+  "Generate a standalone OpenCV C++17 program from the current pipeline.": "根据当前流程生成独立的 OpenCV C++17 程序。",
+  "Generating…": "正在生成…",
+  "Export C++": "导出 C++",
+  "Download source": "下载源码",
+  "Workflow changed. Generate C++ again before downloading.": "流程已修改，请重新生成 C++ 后下载。",
+  "Workflow changed during export. Generate again.": "生成期间流程已修改，请重新生成。",
+  "C++ source exported": "C++ 源码已导出",
+  "C++ export failed at {{v0}} ({{v1}}): {{v2}}": "节点 {{v0}}（{{v1}}）的 C++ 导出失败：{{v2}}",
+  "Cannot export an empty workflow": "无法导出空工作流",
+  "This node does not support C++ export": "该节点不支持 C++ 导出",
+  "Workflow contains a cycle": "工作流存在环",
+  "Duplicate node id": "节点 ID 重复",
+  "Asset batch was not found": "找不到图像资源批次",
+  "Load Images requires existing files or an asset batch": "加载图像需要已有文件或资源批次",
+  "Input image files are missing": "输入图像文件缺失"
 }

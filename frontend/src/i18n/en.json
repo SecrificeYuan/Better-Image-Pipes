@@ -1021,5 +1021,22 @@
   "Invalid enum value. Expected {{v0}}, received {{v1}}": "Invalid enum value. Expected {{v0}}, received {{v1}}",
   "{{v0}} bbox": "{{v0}} bbox",
   "{{v0}} bboxes": "{{v0}} bboxes",
-  "{{v0}} kp": "{{v0}} kp"
+  "{{v0}} kp": "{{v0}} kp",
+  "C++ Export": "C++ Export",
+  "Export language": "Export language",
+  "Generate a standalone OpenCV C++17 program from the current pipeline.": "Generate a standalone OpenCV C++17 program from the current pipeline.",
+  "Generating…": "Generating…",
+  "Export C++": "Export C++",
+  "Download source": "Download source",
+  "Workflow changed. Generate C++ again before downloading.": "Workflow changed. Generate C++ again before downloading.",
+  "Workflow changed during export. Generate again.": "Workflow changed during export. Generate again.",
+  "C++ source exported": "C++ source exported",
+  "C++ export failed at {{v0}} ({{v1}}): {{v2}}": "C++ export failed at {{v0}} ({{v1}}): {{v2}}",
+  "Cannot export an empty workflow": "Cannot export an empty workflow",
+  "This node does not support C++ export": "This node does not support C++ export",
+  "Workflow contains a cycle": "Workflow contains a cycle",
+  "Duplicate node id": "Duplicate node id",
+  "Asset batch was not found": "Asset batch was not found",
+  "Load Images requires existing files or an asset batch": "Load Images requires existing files or an asset batch",
+  "Input image files are missing": "Input image files are missing"
 }

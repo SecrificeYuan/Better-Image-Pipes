@@ -21,19 +21,20 @@
     "@tanstack/react-query": "^5.101.4",
     "@xyflow/react": "^12.11.2",
     "i18next": "26.4.2",
+    "monaco-runtime": "npm:monaco-editor@0.55.1",
     "notistack": "^3.0.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.83.0",
     "react-i18next": "17.0.16",
     "zod": "^3.25.76",
-    "zustand": "^5.0.14",
-    "monaco-runtime": "npm:monaco-editor@0.55.1"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@emnapi/core": "2.0.0-alpha.3",
     "@emnapi/runtime": "2.0.0-alpha.3",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.64.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.4",

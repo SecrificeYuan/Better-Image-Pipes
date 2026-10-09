@@ -22,6 +22,7 @@ from app.nodes.user_script import register_user_scripts
 from app.paths import cache_dir, upload_dir
 from app.services import assets as assets_service
 from app.services.codegen import generate_python
+from app.services.cpp_codegen import generate_cpp
 
 router = APIRouter(prefix="/api")
 router.include_router(user_scripts_router)
@@ -37,6 +38,18 @@ class CodegenBody(BaseModel):
 
 class CodegenResponse(BaseModel):
     code: str
+
+
+class CppCodegenBody(BaseModel):
+    graph: Graph
+    seed: int = 0
+    iteration_count: int = 1
+
+
+class CppCodegenResponse(BaseModel):
+    code: str
+    filename: str
+    dependencies: list[str]
 
 
 class UploadResponse(BaseModel):
@@ -305,3 +318,11 @@ def codegen(body: CodegenBody) -> CodegenResponse:
         return CodegenResponse(code=generate_python(body.graph, seed=body.seed))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/codegen/cpp", response_model=CppCodegenResponse)
+def codegen_cpp(body: CppCodegenBody) -> CppCodegenResponse:
+    result = generate_cpp(body.graph, seed=body.seed, iteration_count=body.iteration_count)
+    return CppCodegenResponse(
+        code=result.code, filename=result.filename, dependencies=result.dependencies
+    )

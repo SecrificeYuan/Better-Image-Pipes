@@ -209,3 +209,27 @@ export async function requestCodegen(): Promise<string> {
   const payload = (await response.json()) as { code: string }
   return payload.code
 }
+
+export async function requestCppCodegen(): Promise<{
+  code: string
+  filename: string
+  dependencies: string[]
+}> {
+  const state = useGraphStore.getState()
+  const response = await fetch('/api/codegen/cpp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      graph: state.toGraphPayload(), seed: state.seed, iteration_count: state.iterationCount,
+    }),
+  })
+  const payload = await response.json()
+  if (!response.ok) {
+    const detail = payload.detail
+    const message = typeof detail?.message === 'string' ? detail.message : JSON.stringify(detail)
+    throw new Error(detail?.node_id
+      ? `C++ export failed at ${detail.node_id} (${detail.node_type}): ${message}`
+      : message)
+  }
+  return payload
+}

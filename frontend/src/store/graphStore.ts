@@ -70,6 +70,8 @@ interface GraphState {
   scriptLogsByNodeId: Record<string, string[]>
   nodeTimings: Record<string, NodeTiming>
   generatedCode: string
+  generatedCppCode: string
+  generatedCppSignature: string | null
   isExecuting: boolean
   seed: number
   iterationCount: number
@@ -120,6 +122,7 @@ interface GraphState {
   appendScriptLog: (nodeId: string, message: string) => void
   setNodeTiming: (nodeId: string, timing: NodeTiming) => void
   setGeneratedCode: (code: string) => void
+  setGeneratedCppCode: (code: string, signature: string) => void
   setIsExecuting: (value: boolean) => void
   setSeed: (seed: number) => void
   setIterationCount: (count: number) => void
@@ -205,6 +208,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   scriptLogsByNodeId: {},
   nodeTimings: {},
   generatedCode: '# Run codegen to export a Python script\n',
+  generatedCppCode: '',
+  generatedCppSignature: null,
   isExecuting: false,
   seed: 0,
   iterationCount: 1,
@@ -655,6 +660,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       nodeTimings: { ...get().nodeTimings, [nodeId]: timing },
     }),
   setGeneratedCode: (code) => set({ generatedCode: code }),
+  setGeneratedCppCode: (code, signature) => set({
+    generatedCppCode: code, generatedCppSignature: signature,
+  }),
   setIsExecuting: (value) => set({ isExecuting: value }),
   setSeed: (seed) => set({ seed, workflowDirty: true }),
   setIterationCount: (count) => set({ iterationCount: Math.max(1, count), workflowDirty: true }),
@@ -699,6 +707,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       nodeTimings: {},
       isExecuting: false,
       generatedCode: '# Run codegen to export a Python script\n',
+      generatedCppCode: '',
+      generatedCppSignature: null,
       seed: 0,
       iterationCount: 1,
       graphRevision: get().graphRevision + 1,
@@ -874,6 +884,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       nodeTimings: {},
       isExecuting: false,
       generatedCode: '# Run codegen to export a Python script\n',
+      generatedCppCode: '',
+      generatedCppSignature: null,
       seed: doc.seed,
       iterationCount: Math.max(1, doc.iterationCount),
       graphRevision: get().graphRevision + 1,
